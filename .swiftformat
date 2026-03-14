@@ -1,0 +1,10 @@
+--indent 2
+--linebreaks lf
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--commas inline
+--stripunusedargs closure-only
+--header ignore
+--trimwhitespace always
+--semicolons never
