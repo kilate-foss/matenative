@@ -1,17 +1,6 @@
 import CMate
 import Foundation
 
-func getArg(_ args: UnsafeMutablePointer<node_arg_vector_t>, _ i: Int) -> UnsafeMutablePointer<arg_node_t>? {
-  guard let argPtr = vector_get(args, i) else { return nil }
-  return argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
-}
-
-func returnStatement(_ value: value_t) -> UnsafeMutablePointer<return_node_t>? {
-  let node = alloc_node(NODE_RETURN)
-  node?.pointee.return_n = value
-  return node
-}
-
 func stdPrint(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutablePointer<return_node_t>? {
   guard let data = data else {
     print("native fndata is nil\n")
@@ -32,10 +21,10 @@ func stdPrint(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutablePo
     print(String(cString: safe_to_string(v)), terminator: "")
   }
 
-  return returnStatement(value_t(
+  return ReturnNode(value: value_t(
     type: NODE_VALUE_TYPE_INT,
     .init(i: 0)
-  ))
+  ))?.raw
 }
 
 func stdSystem(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutablePointer<return_node_t>? {
@@ -56,8 +45,8 @@ func stdSystem(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutableP
   let cmd = get_safe_value(data.pointee.inter, cmdArg)
   let ret = system(cmd.value.s)
 
-  return returnStatement(value_t(
+  return ReturnNode(value: value_t(
     type: NODE_VALUE_TYPE_INT,
     .init(i: ret)
-  ))
+  ))?.raw
 }

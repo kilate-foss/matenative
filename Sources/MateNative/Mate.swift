@@ -11,6 +11,39 @@
 
 import CMate
 
+public func getArg(_ args: UnsafeMutablePointer<node_arg_vector_t>, _ i: Int) -> UnsafeMutablePointer<arg_node_t>? {
+  guard let argPtr = vector_get(args, i) else { return nil }
+  return argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
+}
+
+public extension FunctionNode {
+  convenience init?(name: String, returnType: String, params: [ArgNode], nativeFn: native_fn_t) {
+    guard let node = alloc_node(NODE_NATIVE_FUNCTION) else { return nil }
+    self.init(node)
+    self.name = name
+    self.returnType = returnType
+    self.params = params
+    self.nativeFn = nativeFn
+    native = true
+  }
+}
+
+public extension ReturnNode {
+  convenience init?(value: value_t) {
+    guard let node = alloc_node(NODE_RETURN) else { return nil }
+    self.init(node)
+    self.value = value
+  }
+}
+
+public extension ArgNode {
+  convenience init?(value: value_t) {
+    guard let node = alloc_node(NODE_ARG) else { return nil }
+    self.init(node)
+    self.value = value
+  }
+}
+
 func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, _ ptr: UnsafeMutablePointer<T>) {
   var p = ptr
   withUnsafePointer(to: &p) {
@@ -18,23 +51,41 @@ func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, _ ptr: UnsafeMutabl
   }
 }
 
-public func registerNativeFunction(_ name: String, _ returnType: String, _ params: [ArgNode], _ fn: native_fn_t) {
-  let node = FunctionNode(alloc_node(NODE_NATIVE_FUNCTION))
-  node.name = name
-  node.returnType = returnType
-  node.params = params
-  node.native = true
-  node.nativeFn = fn
+public func register(
+  name: String,
+  returnType: String,
+  params: [ArgNode],
+  fn: native_fn_t
+) -> Bool {
+
+  guard let node = FunctionNode(
+    name: name,
+    returnType: returnType,
+    params: params,
+    nativeFn: fn
+  ) else {
+    return false
+  }
+
   native_register_function_node(node.raw)
+  return true
 }
 
-public func addArg(_ args: inout [ArgNode], _ kind: node_value_kind_t, _ name: String) {
-  let node = ArgNode(alloc_node(NODE_ARG))
-  node.value.type = kind
-  node.value.s = name.withCString {
-    strdup($0)
+public func addArg(
+  to args: inout [ArgNode],
+  kind: node_value_kind_t,
+  name: String
+) -> Bool {
+  let str = name.withCString { strdup($0) }
+
+  guard let node = ArgNode(
+    value: value_t(type: kind, .init(s: str))
+  ) else {
+    return false
   }
+
   args.append(node)
+  return true
 }
 
 public class Node {
