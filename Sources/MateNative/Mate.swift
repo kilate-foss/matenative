@@ -11,13 +11,13 @@
 
 import CMate
 
-public func getArg(_ args: UnsafeMutablePointer<node_arg_vector_t>, _ i: Int) -> UnsafeMutablePointer<arg_node_t>? {
-  guard let argPtr = vector_get(args, i) else { return nil }
-  return argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
-}
-
 public extension FunctionNode {
-  convenience init?(name: String, returnType: String, params: [ArgNode], nativeFn: native_fn_t) {
+  convenience init?(
+    name: String,
+    returnType: String,
+    params: [ArgNode],
+    nativeFn: native_fn_t
+  ) {
     guard let node = alloc_node(NODE_NATIVE_FUNCTION) else { return nil }
     self.init(node)
     self.name = name
@@ -44,7 +44,7 @@ public extension ArgNode {
   }
 }
 
-func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, _ ptr: UnsafeMutablePointer<T>) {
+public func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, ptr: UnsafeMutablePointer<T>) {
   var p = ptr
   withUnsafePointer(to: &p) {
     vector_push_back(vec, UnsafeMutableRawPointer(mutating: $0))
@@ -57,7 +57,6 @@ public func register(
   params: [ArgNode],
   fn: native_fn_t
 ) -> Bool {
-
   guard let node = FunctionNode(
     name: name,
     returnType: returnType,
@@ -71,7 +70,7 @@ public func register(
   return true
 }
 
-public func addArg(
+public func addArgument(
   to args: inout [ArgNode],
   kind: node_value_kind_t,
   name: String
@@ -86,6 +85,15 @@ public func addArg(
 
   args.append(node)
   return true
+}
+
+public func getArgument(
+  from args: UnsafeMutablePointer<node_arg_vector_t>,
+  at i: Int
+) -> ArgNode? {
+  guard let argPtr = vector_get(args, i) else { return nil }
+  let ptr = argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
+  return ArgNode(ptr)
 }
 
 public class Node {
@@ -155,7 +163,7 @@ public class FunctionNode: Node {
     set(new) {
       let vector = vector_make(MemoryLayout<UnsafeMutablePointer<param_node_t>>.size)
       for arg in new! {
-        vectorPushPtr(vector!, arg.raw)
+        vectorPushPtr(vector!, ptr: arg.raw)
       }
       raw.pointee.function_n.params = vector
     }
@@ -179,7 +187,7 @@ public class FunctionNode: Node {
     set(new) {
       let vector = vector_make(MemoryLayout<UnsafeMutablePointer<node_t>>.size)
       for arg in new! {
-        vectorPushPtr(vector!, arg.raw)
+        vectorPushPtr(vector!, ptr: arg.raw)
       }
       raw.pointee.function_n.body = vector
     }
@@ -235,7 +243,7 @@ public class CallNode: Node {
     set(new) {
       let vector = vector_make(MemoryLayout<UnsafeMutablePointer<arg_node_t>>.size)
       for arg in new! {
-        vectorPushPtr(vector!, arg.raw)
+        vectorPushPtr(vector!, ptr: arg.raw)
       }
       raw.pointee.call_n.args = vector
     }

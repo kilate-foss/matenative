@@ -3,7 +3,7 @@ import CMate
 @_cdecl("MATE_NATIVE_REGISTER")
 public func mregister() {
   var params: [ArgNode] = []
-  addArg(
+  addArgument(
     to: &params,
     kind: NODE_VALUE_TYPE_ANY,
     name: "value"
@@ -17,7 +17,7 @@ public func mregister() {
 
   params.removeAll()
 
-  addArg(
+  addArgument(
     to: &params,
     kind: NODE_VALUE_TYPE_ANY,
     name: "value"

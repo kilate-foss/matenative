@@ -7,7 +7,8 @@ REPO = "https://github.com/kilate-foss/mate"
 
 options = {
       debug: false,
-      install: false
+      install: false,
+      clean: false
 }
 
 OptionParser.new do |opts|
@@ -15,6 +16,10 @@ OptionParser.new do |opts|
 
       opts.on("-d", "--debug", "Build in Debug mode") do
             options[:debug] = true
+      end
+
+      opts.on("-c", "--cleam", "Build in Debug mode") do
+            options[:clean] = true
       end
 
       opts.on("-i", "--install", "Installs the library") do
@@ -41,7 +46,7 @@ def prepare_headers(pwd, src_include, dst_include)
       puts "Headers copied."
 end
 
-prepare_headers(pwd, src_include, dst_include)
+prepare_headers(pwd, src_include, dst_include) if options[:clean]
 
 build_mode = options[:debug] ? "debug" : "release"
 puts "Building Swift package (#{build_mode})..."

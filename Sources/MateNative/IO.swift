@@ -13,11 +13,11 @@ func stdPrint(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutablePo
   }
 
   for i in 0 ..< args.pointee.size {
-    guard let arg = getArg(args, i) else {
+    guard let arg = getArgument(from: args, at: i) else {
       print("argument at \(i) is nil")
       return nil
     }
-    let v = get_safe_value(data.pointee.inter, arg)
+    let v = get_safe_value(data.pointee.inter, arg.raw)
     print(String(cString: safe_to_string(v)), terminator: "")
   }
 
@@ -38,11 +38,11 @@ func stdSystem(_ data: UnsafeMutablePointer<native_fndata_t>?) -> UnsafeMutableP
     return nil
   }
 
-  guard let cmdArg = getArg(args, 0) else {
+  guard let cmdArg = getArgument(from: args, at: 0) else {
     print("cmd argument is nil")
     return nil
   }
-  let cmd = get_safe_value(data.pointee.inter, cmdArg)
+  let cmd = get_safe_value(data.pointee.inter, cmdArg.raw)
   let ret = system(cmd.value.s)
 
   return ReturnNode(value: value_t(
