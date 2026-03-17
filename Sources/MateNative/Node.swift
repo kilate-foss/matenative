@@ -1,135 +1,4 @@
-// Swift Abstraction above the C API
-
-// importing libc to use strdup
-#if os(Linux)
-  import Glibc
-#elseif os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-  import Darwin
-#elseif os(Android)
-  import Bionic
-#endif
-
 import CMate
-
-public extension FunctionNode {
-  convenience init?(
-    name: String,
-    returnType: String,
-    params: [ArgNode],
-    nativeFn: native_fn_t
-  ) {
-    guard let node = alloc_node(NODE_NATIVE_FUNCTION) else { return nil }
-    self.init(node)
-    self.name = name
-    self.returnType = returnType
-    self.params = params
-    self.nativeFn = nativeFn
-    native = true
-  }
-}
-
-public extension ReturnNode {
-  convenience init?(value: value_t) {
-    guard let node = alloc_node(NODE_RETURN) else { return nil }
-    self.init(node)
-    self.value = value
-  }
-}
-
-public extension ArgNode {
-  convenience init?(value: value_t) {
-    guard let node = alloc_node(NODE_ARG) else { return nil }
-    self.init(node)
-    self.value = value
-  }
-}
-
-public extension SafeValue {
-  convenience init?(with interpreter: UnsafeMutablePointer<interpreter_t>, from arg: ArgNode) {
-    let v = get_safe_value(interpreter, arg.raw)
-    self.init(v)
-  }
-}
-
-public func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, ptr: UnsafeMutablePointer<T>) {
-  var p = ptr
-  withUnsafePointer(to: &p) {
-    vector_push_back(vec, UnsafeMutableRawPointer(mutating: $0))
-  }
-}
-
-public func register(
-  name: String,
-  returnType: String,
-  params: [ArgNode],
-  fn: native_fn_t
-) -> Bool {
-  guard let node = FunctionNode(
-    name: name,
-    returnType: returnType,
-    params: params,
-    nativeFn: fn
-  ) else {
-    return false
-  }
-
-  native_register_function_node(node.raw)
-  return true
-}
-
-public func addArgument(
-  to args: inout [ArgNode],
-  kind: node_value_kind_t,
-  name: String
-) -> Bool {
-  let str = name.withCString { strdup($0) }
-
-  guard let node = ArgNode(
-    value: value_t(type: kind, .init(s: str))
-  ) else {
-    return false
-  }
-
-  args.append(node)
-  return true
-}
-
-public func getArgument(
-  from args: UnsafeMutablePointer<node_arg_vector_t>,
-  at i: Int
-) -> ArgNode? {
-  guard let argPtr = vector_get(args, i) else { return nil }
-  let ptr = argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
-  return ArgNode(ptr)
-}
-
-public func getStringArgument(
-  _ data: UnsafeMutablePointer<native_fndata_t>,
-  index: Int
-) -> String? {
-
-  guard let args = data.pointee.args else {
-    print("args is nil")
-    return nil
-  }
-
-  guard let arg = getArgument(from: args, at: index) else {
-    print("argument \(index) is nil")
-    return nil
-  }
-
-  guard let value = SafeValue(with: data.pointee.inter, from: arg) else {
-    print("value of argument \(index) is invalid")
-    return nil
-  }
-
-  guard let str = value.toString() else {
-    print("argument \(index) isn't string-compatible")
-    return nil
-  }
-
-  return str
-}
 
 public class Node {
   var raw: UnsafeMutablePointer<node_t>
@@ -162,7 +31,7 @@ public class FunctionNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.function_n.name = strdup($0)
+        raw.pointee.function_n.name = lstrdup($0)
       }
     }
   }
@@ -175,7 +44,7 @@ public class FunctionNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.function_n.return_type = strdup($0)
+        raw.pointee.function_n.return_type = lstrdup($0)
       }
     }
   }
@@ -252,7 +121,7 @@ public class CallNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.call_n.name = strdup($0)
+        raw.pointee.call_n.name = lstrdup($0)
       }
     }
   }
@@ -330,7 +199,7 @@ public class VarDecNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.vardec_n.name = strdup($0)
+        raw.pointee.vardec_n.name = lstrdup($0)
       }
     }
   }
@@ -343,7 +212,7 @@ public class VarDecNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.vardec_n.type = strdup($0)
+        raw.pointee.vardec_n.type = lstrdup($0)
       }
     }
   }
@@ -372,36 +241,41 @@ public class ImportNode: Node {
 
     set(new) {
       new?.withCString {
-        raw.pointee.import_n.path = strdup($0)
+        raw.pointee.import_n.path = lstrdup($0)
       }
     }
   }
 }
 
-public class SafeValue {
-  var raw: UnsafeMutablePointer<safe_value_t>
-
-  init?(_ p: safe_value_t) {
-    guard let rawPtr = malloc(MemoryLayout<safe_value_t>.size) else { return nil }
-    raw = rawPtr.bindMemory(to: safe_value_t.self, capacity: 1)
-    raw.initialize(to: p)
+public extension FunctionNode {
+  convenience init?(
+    name: String,
+    returnType: String,
+    params: [ArgNode],
+    nativeFn: native_fn_t
+  ) {
+    guard let node = alloc_node(NODE_NATIVE_FUNCTION) else { return nil }
+    self.init(node)
+    self.name = name
+    self.returnType = returnType
+    self.params = params
+    self.nativeFn = nativeFn
+    native = true
   }
+}
 
-  deinit {
-    raw.deinitialize(count: 1)
-    free(raw)
+public extension ReturnNode {
+  convenience init?(value: value_t) {
+    guard let node = alloc_node(NODE_RETURN) else { return nil }
+    self.init(node)
+    self.value = value
   }
+}
 
-  func toString() -> String? {
-    guard let ss = safe_to_string(raw.pointee) else { return nil }
-    return String(cString: ss)
-  }
-
-  func toInt() -> Int32 {
-    return safe_to_int(raw.pointee)
-  }
-
-  func toFloat() -> Float {
-    return safe_to_float(raw.pointee)
+public extension ArgNode {
+  convenience init?(value: value_t) {
+    guard let node = alloc_node(NODE_ARG) else { return nil }
+    self.init(node)
+    self.value = value
   }
 }
