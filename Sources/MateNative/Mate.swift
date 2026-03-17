@@ -44,6 +44,13 @@ public extension ArgNode {
   }
 }
 
+public extension SafeValue {
+  convenience init?(with interpreter: UnsafeMutablePointer<interpreter_t>, from arg: ArgNode) {
+    let v = get_safe_value(interpreter, arg.raw)
+    self.init(v)
+  }
+}
+
 public func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, ptr: UnsafeMutablePointer<T>) {
   var p = ptr
   withUnsafePointer(to: &p) {
@@ -94,6 +101,34 @@ public func getArgument(
   guard let argPtr = vector_get(args, i) else { return nil }
   let ptr = argPtr.assumingMemoryBound(to: UnsafeMutablePointer<arg_node_t>.self).pointee
   return ArgNode(ptr)
+}
+
+public func getStringArgument(
+  _ data: UnsafeMutablePointer<native_fndata_t>,
+  index: Int
+) -> String? {
+
+  guard let args = data.pointee.args else {
+    print("args is nil")
+    return nil
+  }
+
+  guard let arg = getArgument(from: args, at: index) else {
+    print("argument \(index) is nil")
+    return nil
+  }
+
+  guard let value = SafeValue(with: data.pointee.inter, from: arg) else {
+    print("value of argument \(index) is invalid")
+    return nil
+  }
+
+  guard let str = value.toString() else {
+    print("argument \(index) isn't string-compatible")
+    return nil
+  }
+
+  return str
 }
 
 public class Node {
@@ -340,5 +375,33 @@ public class ImportNode: Node {
         raw.pointee.import_n.path = strdup($0)
       }
     }
+  }
+}
+
+public class SafeValue {
+  var raw: UnsafeMutablePointer<safe_value_t>
+
+  init?(_ p: safe_value_t) {
+    guard let rawPtr = malloc(MemoryLayout<safe_value_t>.size) else { return nil }
+    raw = rawPtr.bindMemory(to: safe_value_t.self, capacity: 1)
+    raw.initialize(to: p)
+  }
+
+  deinit {
+    raw.deinitialize(count: 1)
+    free(raw)
+  }
+
+  func toString() -> String? {
+    guard let ss = safe_to_string(raw.pointee) else { return nil }
+    return String(cString: ss)
+  }
+
+  func toInt() -> Int32 {
+    return safe_to_int(raw.pointee)
+  }
+
+  func toFloat() -> Float {
+    return safe_to_float(raw.pointee)
   }
 }
