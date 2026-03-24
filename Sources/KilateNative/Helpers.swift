@@ -1,4 +1,4 @@
-import CMate
+import CKilate
 
 public func vectorPushPtr<T>(_ vec: UnsafeMutablePointer<vector_t>, ptr: UnsafeMutablePointer<T>) {
   var p = ptr

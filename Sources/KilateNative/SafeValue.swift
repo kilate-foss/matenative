@@ -1,4 +1,4 @@
-import CMate
+import CKilate
 
 public class SafeValue {
   var raw: UnsafeMutablePointer<safe_value_t>

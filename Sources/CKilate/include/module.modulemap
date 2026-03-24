@@ -1,0 +1,6 @@
+module CKilate {
+    umbrella header "kilate.h"
+
+    export *
+    module * { export * }
+}

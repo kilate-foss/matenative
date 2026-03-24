@@ -3,7 +3,7 @@
 require "fileutils"
 require "optparse"
 
-REPO = "https://github.com/kilate-foss/mate"
+REPO = "https://github.com/der-foss/derKilate"
 
 options = {
       debug: false,
@@ -18,7 +18,7 @@ OptionParser.new do |opts|
             options[:debug] = true
       end
 
-      opts.on("-c", "--cleam", "Build in Debug mode") do
+      opts.on("-c", "--clean", "Build in Debug mode") do
             options[:clean] = true
       end
 
@@ -28,13 +28,13 @@ OptionParser.new do |opts|
 end.parse!
 
 pwd = File.expand_path(File.dirname(__FILE__))
-src_include = File.join(pwd, ".mate/include/mate")
-dst_include = File.join(pwd, "Sources/CMate/include/mate")
+src_include = File.join(pwd, ".kilate/include/kilate")
+dst_include = File.join(pwd, "Sources/CKilate/include/kilate")
 
 def prepare_headers(pwd, src_include, dst_include)
       puts "Cloning repository..."
-      FileUtils.rm_rf(File.join(pwd, ".mate"))
-      system("git clone #{REPO} .mate") or abort("Git clone failed")
+      FileUtils.rm_rf(File.join(pwd, ".kilate"))
+      system("git clone #{REPO} .kilate") or abort("Git clone failed")
 
       puts "Copying headers..."
 
@@ -55,7 +55,7 @@ system("swift build -c #{build_mode}") or abort("Swift build failed")
 
 if options[:install]
       PREFIX = ENV["PREFIX"] || "/usr"
-      LIBDIR = "#{PREFIX}/mate/native_libs/libmatenative.so"
-      FileUtils.mkdir_p("#{PREFIX}/mate/native_libs/")
-      FileUtils.cp_r(".build/#{build_mode}/libMateNative.so", LIBDIR)
+      LIBDIR = "#{PREFIX}/kilate/native_libs/libkilatenative.so"
+      FileUtils.mkdir_p("#{PREFIX}/kilate/native_libs/")
+      FileUtils.cp_r(".build/#{build_mode}/libKilateNative.so", LIBDIR)
 end

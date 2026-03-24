@@ -1,6 +1,6 @@
-import CMate
+import CKilate
 
-@_cdecl("MATE_NATIVE_REGISTER")
+@_cdecl("KILATE_NATIVE_REGISTER")
 public func mregister() {
   var params: [ArgNode] = []
   addArgument(

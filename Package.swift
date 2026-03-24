@@ -3,24 +3,24 @@
 import PackageDescription
 
 let package = Package(
-  name: "MateNative",
+  name: "KilateNative",
   products: [
     .library(
-      name: "MateNative",
+      name: "KilateNative",
       type: .dynamic,
-      targets: ["MateNative"]
+      targets: ["KilateNative"]
     )
   ],
   targets: [
     .target(
-      name: "CMate",
-      path: "Sources/CMate",
+      name: "CKilate",
+      path: "Sources/CKilate",
       publicHeadersPath: "include"
     ),
 
     .target(
-      name: "MateNative",
-      dependencies: ["CMate"]
+      name: "KilateNative",
+      dependencies: ["CKilate"]
     )
   ]
 )
