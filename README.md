@@ -1,2 +1,1 @@
-# KilateNative
-- The Kilate Language Standard Library Native Side written in Swift
+# Moved to [Codeberg](https://codeberg.org/trindadedev/derKikateNative)
